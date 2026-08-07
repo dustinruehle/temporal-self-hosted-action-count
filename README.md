@@ -1,84 +1,74 @@
 # Counting Actions on a Self-Hosted Temporal Cluster
 
-Temporal Cloud bills on **Actions**. Your self-hosted Service doesn't show you a total
-the way Cloud does — but the number is already in your environment. This repo shows you
-how to read it, **fastest path first**.
+> Measure your billable Temporal **Actions** before migrating to Cloud — the number is
+> already in your environment; this shows you how to read it.
 
----
+Temporal Cloud bills on Actions. A self-hosted Service doesn't surface a total the way
+Cloud does, but the data is there. There are two ways to get it — **start with Path A if
+you scrape metrics, otherwise Path B.** Each path below is the quick version; follow the
+link for full steps and caveats.
 
-## The 30-second answer
+## Path A — read the metric  ·  *preferred, if you scrape Prometheus / Grafana*
 
-**Do you scrape your cluster with Prometheus or Grafana?**
-
-**✅ Yes →** you already have it. Run one query:
+Your Action count for the last 30 days is one query:
 
 ```promql
 sum(increase(action{service_name="frontend"}[30d]))
 ```
 
-That's your Action count for the last 30 days. → [Path A: read the metric](docs/path-a-metrics.md)
+Billing-accurate on Server **1.22.3+**. (No `action` metric before 1.17 → use Path B.)
 
-**❌ No →** count from exported Workflow histories instead:
+→ **[Full steps: APS + peak, per-namespace, window & label caveats](docs/path-a-metrics.md)**
+
+## Path B — count from histories  ·  *no metrics pipeline*
+
+Export one Event History per Workflow Type and count it:
 
 ```bash
 temporal workflow show --workflow-id <id> --output json > history.json
 uvx --from git+https://github.com/temporal-community/temporal-history-action-count temporal-billable history.json
 ```
 
-Do that for one run of each Workflow Type, multiply by monthly volume, sum.
-→ [Path B: count from histories](docs/path-b-histories.md)
+Multiply each type's count by its monthly volume, sum, then add Queries and Heartbeats
+(they're billable but never land in history).
 
-**Then turn it into a monthly figure** and send it to your Temporal SA:
+→ **[Full steps: sampling, scaling, what history hides](docs/path-b-histories.md)**
+
+## Turn it into a monthly figure
 
 ```
-Monthly Actions = mean APS × 60 × 60 × 24 × 30   (× 2,592,000)
+Monthly Actions = mean APS × 2,592,000     (60 × 60 × 24 × 30)
 ```
 
----
-
-## Which path is mine?
-
-| | Path A — metric | Path B — histories |
-|---|---|---|
-| **Use when** | you already scrape Prometheus/Grafana | you have no metrics pipeline |
-| **Effort** | one PromQL query | export a few histories + run a tool |
-| **Accuracy** | billing-accurate on Server **≥ 1.22.3** | good per-type estimate; some Actions not in history |
-| **Covers** | everything, cluster-wide | per-Workflow-Type; **add Queries + Heartbeats manually** |
-
-**Check your Server version first.** `1.22.3+` is billing-accurate (incl. Local
-Activities). `1.17–1.22.2` is fine for load sizing but runs low. Earlier than `1.17`
-has no `action` metric — use Path B.
-
----
+Share that total and your peak APS with your Temporal SA — it's the starting point for a
+sizing conversation, not the final number.
 
 ## Before you trust the number
 
-Three things bite people in practice — an under-reporting query on young clusters, a
-wrong install command, and a child-workflow double-count. **Read
-[docs/gotchas.md](docs/gotchas.md) before you quote a figure.**
+Three things bite people: `increase()` under-reporting on young clusters, a wrong install
+command, and a child-workflow double-count. **[Read the gotchas](docs/gotchas.md)** before
+you quote a figure.
 
----
+## Validate it yourself  *(optional)*
 
-## Prove it works first (optional)
-
-Skeptical, or want something runnable to prove the method before trusting it?
-[`harness/`](harness/) spins up a disposable self-hosted cluster, generates a **known**
-workload, and shows **both paths landing on the same number**:
+Want proof before trusting the method? [`harness/`](harness/) stands up a disposable
+cluster, runs a **known** workload, and shows both paths landing on the same number:
 
 ```bash
 cd harness && make demo
 ```
 
-→ [harness/README.md](harness/README.md)
+## What's in this repo
 
----
+| Path | What |
+|---|---|
+| [`docs/`](docs/) | the two methods in full, plus [gotchas](docs/gotchas.md) |
+| [`recipe/`](recipe/) | a printable one-pager ([PDF](recipe/temporal-action-count-recipe.pdf)) and its source |
+| [`harness/`](harness/) | disposable cluster + known workload that proves both paths agree |
 
 ## Reference
 
-- [Estimate Actions for migration](https://docs.temporal.io/cloud/migrate/estimate-actions)
-- [What counts as an Action](https://docs.temporal.io/cloud/actions)
-- [Temporal Cloud pricing](https://docs.temporal.io/cloud/pricing)
-- [Action counter tool](https://github.com/temporal-community/temporal-history-action-count) — Path B history counter
+- [Estimate Actions for migration](https://docs.temporal.io/cloud/migrate/estimate-actions) · [What counts as an Action](https://docs.temporal.io/cloud/actions) · [Cloud pricing](https://docs.temporal.io/cloud/pricing)
+- [temporal-history-action-count](https://github.com/temporal-community/temporal-history-action-count) — the Path B counter
 - [temporal-server-actions-count](https://github.com/temporal-sa/temporal-server-actions-count) — scripts the Path A metric sampling
-- [datadog-self-hosted-queries](https://github.com/temporal-sa/datadog-self-hosted-queries) — ready-made widget queries if you use Datadog
-- Printable one-pager: [`recipe/temporal-action-count-recipe.pdf`](recipe/temporal-action-count-recipe.pdf) — use it to walk someone through the two paths (built from [`recipe/`](recipe/))
+- [datadog-self-hosted-queries](https://github.com/temporal-sa/datadog-self-hosted-queries) — ready-made queries if you use Datadog
