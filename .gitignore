@@ -1,0 +1,15 @@
+# harness build + run artifacts
+harness/bin/
+harness/.worker.log
+harness/.worker.pid
+harness/.sample-ids.txt
+
+# counter tool clone (fetched on demand by uvx / make)
+harness/counter/
+
+# python
+.venv/
+__pycache__/
+
+# os
+.DS_Store

@@ -1,0 +1,87 @@
+version: "3.5"
+
+# Self-hosted Temporal cluster for validating the "Counting Your Actions
+# Before Cloud" recipe. Single-process auto-setup server (v1.29.1, which is
+# >=1.22.3 => billing-accurate `action` metric incl. Local Activity metering),
+# Postgres persistence, Web UI, Prometheus scraping the frontend `action`
+# counter, and Grafana for the Path A queries.
+
+services:
+  postgresql:
+    container_name: temporal-postgresql
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: temporal
+      POSTGRES_USER: temporal
+    expose:
+      - 5432
+    networks:
+      - temporal-network
+
+  temporal:
+    container_name: temporal
+    image: temporalio/auto-setup:1.29.1
+    depends_on:
+      - postgresql
+    environment:
+      - DB=postgres12
+      - DB_PORT=5432
+      - POSTGRES_USER=temporal
+      - POSTGRES_PWD=temporal
+      - POSTGRES_SEEDS=postgresql
+      - DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/development-sql.yaml
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_CLI_ADDRESS=temporal:7233
+      # Expose Prometheus metrics (this is what makes Path A testable).
+      - PROMETHEUS_ENDPOINT=0.0.0.0:8000
+    ports:
+      - 7233:7233
+      - 8000:8000
+    volumes:
+      - ./dynamicconfig:/etc/temporal/config/dynamicconfig
+    networks:
+      - temporal-network
+
+  temporal-ui:
+    container_name: temporal-ui
+    image: temporalio/ui:2.34.0
+    depends_on:
+      - temporal
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_CORS_ORIGINS=http://localhost:3000
+    ports:
+      - 8080:8080
+    networks:
+      - temporal-network
+
+  prometheus:
+    container_name: temporal-prometheus
+    image: prom/prometheus:v2.54.1
+    depends_on:
+      - temporal
+    ports:
+      - 9090:9090
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - temporal-network
+
+  grafana:
+    container_name: temporal-grafana
+    image: grafana/grafana:11.2.0
+    depends_on:
+      - prometheus
+    environment:
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+    ports:
+      - 8085:3000
+    networks:
+      - temporal-network
+
+networks:
+  temporal-network:
+    driver: bridge
+    name: temporal-network

@@ -1,0 +1,15 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+scrape_configs:
+  - job_name: 'temporal-server'
+    metrics_path: /metrics
+    scheme: http
+    static_configs:
+      # The auto-setup container runs all roles (frontend, history, matching,
+      # worker) in one process and exposes their combined metrics here.
+      # The `action` counter is emitted with service_name="frontend".
+      - targets:
+          - 'temporal:8000'
+        labels:
+          group: 'server-metrics'
