@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Builds the customer-facing "Counting Your Actions Before Cloud" PDF.
+"""Builds the "Counting Your Actions Before Cloud" one-pager PDF.
 
 Run it with reportlab available, e.g.:
 

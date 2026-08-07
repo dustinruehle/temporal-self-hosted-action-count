@@ -1,6 +1,6 @@
 # Build Guide: "Counting Your Actions Before Cloud" PDF
 
-A self-contained spec for the customer-facing action-count recipe PDF. With this file you can rebuild the PDF exactly, restyle it, or add content without guessing the conventions. The generator lives beside this file as [`build_pdf.py`](build_pdf.py).
+A self-contained spec for the action-count recipe one-pager PDF. With this file you can rebuild the PDF exactly, restyle it, or add content without guessing the conventions. The generator lives beside this file as [`build_pdf.py`](build_pdf.py).
 
 The generator is a single Python file using ReportLab Platypus. Output is a three-page US Letter PDF with clickable links.
 
@@ -110,12 +110,12 @@ The story is built top to bottom in this order:
 
 ## 5. House rules
 
-These are non-negotiable for this artifact. They reflect the brand system and the customer-facing bar.
+These are non-negotiable for this artifact. They reflect the brand system and the quality bar for a shareable one-pager.
 
 - **No em dashes anywhere.** Use commas or restructure. This applies to body copy, titles, and code comments.
 - **No AI filler words.** Avoid seamless, robust, leverage, delve, genuinely, and similar. Write plainly.
 - **Links inline, not in a trailing list.** Every reference goes where the tool or concept is used, via `a(url, text)`. There is deliberately no "References" section.
-- **Only public links in this customer-facing PDF.** Verified public and safe: the three GitHub repos and the docs.temporal.io pages listed in section 7. Internal Google Drive docs and Notion pages must never appear here. If an internal-facing variant is needed, make it a separate file so the two never mix.
+- **Only public links in this shared PDF.** Verified public and safe: the three GitHub repos and the docs.temporal.io pages listed in section 7. Internal Google Drive docs and Notion pages must never appear here. If an internal-facing variant is needed, make it a separate file so the two never mix.
 - **Verify before you cite.** Any API name, metric name, CLI flag, version threshold, or doc URL added later must be checked against the temporal-docs source and the tool's own README before it ships. The skill this recipe came from had a stale counter command; do not trust secondhand command strings.
 - **No pricing.** This version intentionally carries no pricing, rate-card, or cost language. The header kicker is "ACTION SIZING" for this reason. Keep it out.
 

@@ -61,9 +61,9 @@ wrong install command, and a child-workflow double-count. **Read
 
 ## Prove it works first (optional)
 
-Skeptical, or want to hand a customer something they can run? [`harness/`](harness/)
-spins up a disposable self-hosted cluster, generates a **known** workload, and shows
-**both paths landing on the same number**:
+Skeptical, or want something runnable to prove the method before trusting it?
+[`harness/`](harness/) spins up a disposable self-hosted cluster, generates a **known**
+workload, and shows **both paths landing on the same number**:
 
 ```bash
 cd harness && make demo
@@ -81,4 +81,4 @@ cd harness && make demo
 - [Action counter tool](https://github.com/temporal-community/temporal-history-action-count) — Path B history counter
 - [temporal-server-actions-count](https://github.com/temporal-sa/temporal-server-actions-count) — scripts the Path A metric sampling
 - [datadog-self-hosted-queries](https://github.com/temporal-sa/datadog-self-hosted-queries) — ready-made widget queries if you use Datadog
-- Customer one-pager: [`recipe/temporal-action-count-recipe.pdf`](recipe/temporal-action-count-recipe.pdf) (built from [`recipe/`](recipe/))
+- Printable one-pager: [`recipe/temporal-action-count-recipe.pdf`](recipe/temporal-action-count-recipe.pdf) — use it to walk someone through the two paths (built from [`recipe/`](recipe/))

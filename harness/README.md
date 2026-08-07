@@ -2,7 +2,7 @@
 
 Spins up a throwaway self-hosted Temporal cluster, runs a **known** workload, and shows
 **Path A (metric) and Path B (histories) landing on the same Action count**. Use it to
-convince yourself — or a customer — before quoting a figure.
+convince yourself the method is sound before quoting a figure.
 
 ## One command
 

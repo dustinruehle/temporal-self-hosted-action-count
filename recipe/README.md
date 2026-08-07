@@ -1,10 +1,10 @@
 # The recipe PDF (and how it's built)
 
-The customer-facing one-pager, **Counting Your Actions Before Cloud**, and its source.
+The printable one-pager, **Counting Your Actions Before Cloud**, and its source.
 
 | File | What |
 |---|---|
-| [`temporal-action-count-recipe.pdf`](temporal-action-count-recipe.pdf) | the deliverable — hand this to a customer |
+| [`temporal-action-count-recipe.pdf`](temporal-action-count-recipe.pdf) | the deliverable — use this to walk through the two paths |
 | `build_pdf.py` | the generator (ReportLab); the PDF is a build artifact of this |
 | [`BUILD-GUIDE.md`](BUILD-GUIDE.md) | design system, house rules, component reference, common edits |
 
