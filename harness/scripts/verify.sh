@@ -45,29 +45,30 @@ MT=$(count histories/moneytransfer.json)
 OF=$(count histories/orderfulfillment.json)
 RI=$(count histories/reserveinventory.json)
 
-# --- APS shape: mean + peak of rate() over the run window (like reading a Grafana graph) ---
-# rate()/APS is only meaningful over sustained load, so we read it across the whole
-# paced run rather than at a single instant (which would show ~0 once the run ends).
-APS_MEAN="n/a"; APS_PEAK="n/a"
+# --- APS shape over the run window ---
+# Mean APS is the counter delta over the run divided by its duration — the definition of
+# mean APS, and exactly what the monthly formula wants. (Averaging rate() samples would
+# under-report here: over a ~60s run a [1m] rate never leaves its ramp.)
+# Peak APS still comes from rate(): it's a genuine per-second spike.
+APS_MEAN="n/a"; APS_PEAK="n/a"; DURATION=0
 if [ -f .run-window ]; then
   read -r RUN_START RUN_END < .run-window
-  APS_JSON=$(curl -s \
+  DURATION=$((RUN_END - RUN_START))
+  APS_PEAK=$(curl -s \
     --data-urlencode 'query=sum(rate(action{service_name="frontend",namespace="default"}[1m]))' \
     --data-urlencode "start=$((RUN_START-5))" --data-urlencode "end=$((RUN_END+5))" \
-    --data-urlencode 'step=5s' "$PROM/api/v1/query_range")
-  read -r APS_MEAN APS_PEAK <<EOF
-$(printf '%s' "$APS_JSON" | python3 -c "
+    --data-urlencode 'step=5s' "$PROM/api/v1/query_range" \
+    | python3 -c "
 import sys,json
 r=json.load(sys.stdin)['data']['result']
 vals=[float(v[1]) for s in r for v in s['values']] if r else []
-print(f'{sum(vals)/len(vals):.2f} {max(vals):.2f}' if vals else 'n/a n/a')")
-EOF
+print(f'{max(vals):.2f}' if vals else 'n/a')")
 fi
 
-python3 - "$A" "$MT" "$OF" "$RI" "$TRANSFERS" "$ORDERS" "$APS_MEAN" "$APS_PEAK" <<'PY'
+python3 - "$A" "$MT" "$OF" "$RI" "$TRANSFERS" "$ORDERS" "$DURATION" "$APS_PEAK" <<'PY'
 import sys
-A, MT, OF, RI, T, O = map(int, sys.argv[1:7])
-aps_mean, aps_peak = sys.argv[7], sys.argv[8]
+A, MT, OF, RI, T, O, DUR = map(int, sys.argv[1:8])
+aps_peak = sys.argv[8]
 scaled = MT*T + OF*O + RI*O
 print(f"Path A  (server metric, raw counter) = {A}")
 print(f"Path B  per-run: MoneyTransfer={MT} OrderFulfillment={OF} ReserveInventory={RI}")
@@ -75,6 +76,8 @@ print(f"Path B  scaled  ({MT}*{T} + {OF}*{O} + {RI}*{O}) = {scaled}")
 ok = A == scaled
 print(("MATCH ✅" if ok else "MISMATCH ❌") + f"  Path A {A} vs Path B {scaled}")
 print("(child-2x + queries net out here — see ../docs/gotchas.md#b2)")
-print(f"APS over the run: mean={aps_mean}/s  peak={aps_peak}/s  (feeds the monthly = mean APS x 2,592,000 projection)")
+aps_mean = f"{A/DUR:.2f}" if DUR > 0 else "n/a"
+print(f"APS over the run: mean={aps_mean}/s ({A} actions / {DUR}s) -> monthly = mean x 2,592,000")
+print(f"                  peak={aps_peak}/s (rate[1m]; a shorter window surfaces higher bursts)")
 sys.exit(0 if ok else 1)
 PY

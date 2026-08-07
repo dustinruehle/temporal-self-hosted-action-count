@@ -18,15 +18,22 @@ Path A  (server metric, raw counter) = 400
 Path B  per-run: MoneyTransfer=3 OrderFulfillment=7 ReserveInventory=3
 Path B  scaled  (3·50 + 7·25 + 3·25) = 400
 MATCH ✅  Path A 400 vs Path B 400
-APS over the run: mean=2.96/s  peak=6.78/s  (feeds the monthly = mean APS × 2,592,000 projection)
+APS over the run: mean=6.56/s (400 actions / 61s) -> monthly = mean x 2,592,000
+                  peak=6.48/s (rate[1m]; a shorter window surfaces higher bursts)
 ```
 
 Tear it down with `make down`.
 
 > **Why the run is paced.** `rate()`/APS only mean something under sustained load — a
 > single burst reads ~0 because nothing rises across a scrape window (the same effect as
-> [gotcha A1](../docs/gotchas.md#a1)). `SPREAD` (default 60s) spreads the starts so peak
-> APS is real; it doesn't change the total (still 400).
+> [gotcha A1](../docs/gotchas.md#a1)). `SPREAD` (default 60s) spreads the starts so APS is
+> real; it doesn't change the total (still 400).
+>
+> **Mean vs peak.** Mean is computed exactly as Δcounter ÷ duration (what the monthly
+> projection wants), not by averaging `rate()` — which would under-report on a short run.
+> Peak comes from `rate([1m])`, the recipe's canonical APS window; it's window-sensitive,
+> so tighter windows (e.g. `[15s]`) reveal higher instantaneous bursts. Under this
+> uniform synthetic load mean ≈ peak by design.
 
 ## Prereqs
 Docker · Go · [`uv`](https://docs.astral.sh/uv/) · the `temporal` CLI.
