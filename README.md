@@ -78,5 +78,7 @@ cd harness && make demo
 - [Estimate Actions for migration](https://docs.temporal.io/cloud/migrate/estimate-actions)
 - [What counts as an Action](https://docs.temporal.io/cloud/actions)
 - [Temporal Cloud pricing](https://docs.temporal.io/cloud/pricing)
-- [Action counter tool](https://github.com/temporal-community/temporal-history-action-count)
-- Original recipe: [`temporal-action-count-recipe.pdf`](temporal-action-count-recipe.pdf)
+- [Action counter tool](https://github.com/temporal-community/temporal-history-action-count) — Path B history counter
+- [temporal-server-actions-count](https://github.com/temporal-sa/temporal-server-actions-count) — scripts the Path A metric sampling
+- [datadog-self-hosted-queries](https://github.com/temporal-sa/datadog-self-hosted-queries) — ready-made widget queries if you use Datadog
+- Customer one-pager: [`recipe/temporal-action-count-recipe.pdf`](recipe/temporal-action-count-recipe.pdf) (built from [`recipe/`](recipe/))
