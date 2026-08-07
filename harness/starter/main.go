@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/google/uuid"
 	"go.temporal.io/sdk/client"
@@ -17,6 +18,7 @@ import (
 func main() {
 	transfers := flag.Int("transfers", 50, "number of money-transfer workflows to run")
 	orders := flag.Int("orders", 25, "number of order-fulfillment workflows to run")
+	spread := flag.Float64("spread", 60, "seconds to spread the starts over, so rate()/APS is measurable (0 = fire all at once)")
 	flag.Parse()
 
 	c, err := client.Dial(client.Options{HostPort: "localhost:7233"})
@@ -25,6 +27,13 @@ func main() {
 	}
 	defer c.Close()
 	ctx := context.Background()
+
+	// Pace starts across `spread` seconds. A single burst makes rate()/APS read ~0
+	// (nothing rises across a scrape window); sustained load gives a real APS curve.
+	var pace time.Duration
+	if total := *transfers + *orders; *spread > 0 && total > 0 {
+		pace = time.Duration(float64(time.Second) * *spread / float64(total))
+	}
 
 	var wg sync.WaitGroup
 	var sampleTransferID, sampleOrderID, sampleChildID string
@@ -46,6 +55,7 @@ func main() {
 		}
 		wg.Add(1)
 		go func(r client.WorkflowRun) { defer wg.Done(); _ = r.Get(ctx, nil) }(run)
+		time.Sleep(pace)
 	}
 
 	// --- Orders (each spawns a ReserveInventory child; each gets one Query) ---
@@ -74,6 +84,7 @@ func main() {
 				log.Printf("query %s failed: %v", wfID, err)
 			}
 		}(run, wfID)
+		time.Sleep(pace)
 	}
 
 	wg.Wait()

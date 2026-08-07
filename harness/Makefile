@@ -1,9 +1,11 @@
 .PHONY: demo up load verify down clean
 
-# Overridable workload size:  make demo TRANSFERS=100 ORDERS=40
+# Overridable workload:  make demo TRANSFERS=100 ORDERS=40 SPREAD=90
+# SPREAD = seconds to pace the starts over, so rate()/APS is measurable (0 = burst).
 TRANSFERS ?= 50
 ORDERS    ?= 25
-export TRANSFERS ORDERS
+SPREAD    ?= 60
+export TRANSFERS ORDERS SPREAD
 
 COMPOSE = docker compose -f cluster/docker-compose.yml
 
@@ -23,5 +25,5 @@ down: ## stop and remove the cluster + volumes
 	$(COMPOSE) down -v
 
 clean: down ## also remove build artifacts and generated files
-	@rm -rf bin .worker.log .sample-ids.txt
+	@rm -rf bin .worker.log .sample-ids.txt .run-window
 	@echo "cleaned"

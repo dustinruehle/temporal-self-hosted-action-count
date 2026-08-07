@@ -1,8 +1,8 @@
-# Before you trust the number
+# Accuracy notes
 
-Three things that make an Action estimate wrong in practice. All three were found while
-validating both paths against a known workload in [`../harness`](../harness) (where the
-true answer was 400).
+Three edge cases that can skew an Action estimate — each minor, each with a clear fix.
+All three surfaced while validating both paths against a known workload in
+[`../harness`](../harness) (where the true answer was 400).
 
 <a name="a1"></a>
 ## A1 · `increase([30d])` under-reports on "young" series

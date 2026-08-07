@@ -49,15 +49,19 @@ sum(rate(action{service_name="frontend"}[1m])) by (exported_namespace)
 ```
 
 **Mean APS** is the average of that series over your window; feed it into the monthly
-formula below. **Peak APS** is its highest point — in Grafana, read the top of the graph;
-in PromQL, wrap it in `max_over_time`:
+formula below. **Peak APS** is its highest point — in Grafana, just read the top of the
+graph over your range. In PromQL, wrap the rate in `max_over_time` as a subquery:
 
 ```promql
-max_over_time( sum(rate(action{service_name="frontend"}[1m]))[30d:1m] )
+max_over_time( sum(rate(action{service_name="frontend"}[1m]))[24h:1m] )
 ```
 
 Peak APS is what sizes your Namespace APS limits, and it's where elastic scaling pays off
 versus overprovisioning self-hosted for the spike.
+
+> A subquery like `[30d:1m]` is 43k evaluation steps and can trip Prometheus's
+> `maxSamples` limit or run slowly. For long ranges, read the peak off the Grafana graph,
+> or widen the resolution step (e.g. `[30d:10m]`).
 
 ## 5. Convert to a monthly figure
 

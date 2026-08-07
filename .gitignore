@@ -3,6 +3,7 @@ harness/bin/
 harness/.worker.log
 harness/.worker.pid
 harness/.sample-ids.txt
+harness/.run-window
 
 # counter tool clone (fetched on demand by uvx / make)
 harness/counter/

@@ -10,16 +10,23 @@ convince yourself the method is sound before quoting a figure.
 make demo
 ```
 
-Brings up the cluster, generates the workload, and prints the reconciliation:
+Brings up the cluster, paces the workload over ~60s (so APS is measurable), and prints
+the reconciliation plus the APS shape:
 
 ```
 Path A  (server metric, raw counter) = 400
 Path B  per-run: MoneyTransfer=3 OrderFulfillment=7 ReserveInventory=3
 Path B  scaled  (3·50 + 7·25 + 3·25) = 400
 MATCH ✅  Path A 400 vs Path B 400
+APS over the run: mean=2.96/s  peak=6.78/s  (feeds the monthly = mean APS × 2,592,000 projection)
 ```
 
 Tear it down with `make down`.
+
+> **Why the run is paced.** `rate()`/APS only mean something under sustained load — a
+> single burst reads ~0 because nothing rises across a scrape window (the same effect as
+> [gotcha A1](../docs/gotchas.md#a1)). `SPREAD` (default 60s) spreads the starts so peak
+> APS is real; it doesn't change the total (still 400).
 
 ## Prereqs
 Docker · Go · [`uv`](https://docs.astral.sh/uv/) · the `temporal` CLI.
@@ -49,8 +56,8 @@ every tricky case the recipe claims to handle: **child (2×)**, **local activity
 | `make …` | does |
 |---|---|
 | `up` | start the cluster, wait until healthy |
-| `load` | build + run worker, fire the workload (`TRANSFERS=50 ORDERS=25` overridable) |
-| `verify` | query Path A, export + count histories for Path B, reconcile |
+| `load` | build + run worker, fire the paced workload (`TRANSFERS=50 ORDERS=25 SPREAD=60` overridable) |
+| `verify` | reconcile Path A vs Path B, and report mean/peak APS over the run |
 | `demo` | `up` → `load` → `verify` |
 | `down` | stop and remove the cluster (and volumes) |
 | `clean` | `down` + remove build artifacts and generated files |
