@@ -16,7 +16,9 @@ Your Action count for the last 30 days is one query:
 sum(increase(action{service_name="frontend"}[30d]))
 ```
 
-Billing-accurate on Server **1.22.3+**. (No `action` metric before 1.17 → use Path B.)
+On Server **1.22.3+** this closely reflects Cloud Action pricing (incl. Local Activity
+metering); it's a billing-grade **estimate**, not the invoice. (No `action` metric before
+1.17 → use Path B.)
 
 → **[Full steps: APS + peak, per-namespace, window & label caveats](docs/path-a-metrics.md)**
 

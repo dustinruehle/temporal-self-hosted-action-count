@@ -230,9 +230,9 @@ story.append(Spacer(1, 4))
 story.append(callout(
     "Before you start",
     "Check your Temporal Server version and confirm whether you have Prometheus or Grafana scraping the "
-    "cluster. Version decides accuracy: 1.17 and later emit the metric, and 1.22.3 and later report it "
-    "accurately for billing, including Local Activity metering. If you scrape metrics, use Path A. If you "
-    "do not, use Path B.", INDIGO))
+    "cluster. Version decides accuracy: 1.17 and later emit the metric, and 1.22.3 and later closely "
+    "reflect Cloud Action pricing, including Local Activity metering. If you scrape metrics, use Path A. "
+    "If you do not, use Path B.", INDIGO))
 story.append(Spacer(1, 16))
 
 # ---- Path A ----
@@ -240,8 +240,9 @@ pathA = section_header("PATH A  ·  PREFERRED", "Read the Action metric from Pro
 pathA.append(Spacer(1,2))
 pathA.append(step_card(1,
     "Confirm the Server version",
-    "Anything 1.22.3 or newer gives a billing-accurate count. Between 1.17 and 1.22.2 the metric is still "
-    "useful for load sizing but runs low on Local Activities, so treat it as an approximation.",
+    "Anything 1.22.3 or newer closely reflects Cloud Action pricing (a billing-grade estimate, not the "
+    "invoice). Between 1.17 and 1.22.2 the metric is still useful for load sizing but runs low on Local "
+    "Activities, so treat it as an approximation.",
     INDIGO))
 story.append(KeepTogether(pathA))
 
@@ -334,7 +335,7 @@ vt = section_header("QUICK REFERENCE", "Accuracy by Server version")
 story.append(KeepTogether(vt))
 tbl_data = [
     [Paragraph("Server version", st_th), Paragraph("What the metric gives you", st_th)],
-    [Paragraph("1.22.3 and later", st_td_m), Paragraph("Billing-accurate, includes Local Activity metering", st_td)],
+    [Paragraph("1.22.3 and later", st_td_m), Paragraph("Closely reflects Cloud pricing, includes Local Activity metering", st_td)],
     [Paragraph("1.17 to 1.22.2", st_td_m), Paragraph("Useful for load sizing, runs low for billing", st_td)],
     [Paragraph("Earlier than 1.17", st_td_m), Paragraph("No action metric, use the Grafana dashboard workaround or Path B", st_td)],
 ]

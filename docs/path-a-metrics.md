@@ -8,9 +8,12 @@ that maps directly to Cloud billable Actions.
 
 | Version | What the metric gives you |
 |---|---|
-| **1.22.3+** | Billing-accurate, includes Local Activity metering |
+| **1.22.3+** | Closely reflects Cloud Action pricing, includes Local Activity metering |
 | 1.17 – 1.22.2 | Useful for load sizing; runs low on Local Activities |
 | < 1.17 | No `action` metric — use [Path B](path-b-histories.md) |
+
+The metric is a **billing-grade estimate**, not the invoice — Temporal's docs say 1.22.3+
+"more closely reflects" Cloud pricing. Use it to size and forecast, then confirm with your SA.
 
 ## 2. Total Actions over your window
 

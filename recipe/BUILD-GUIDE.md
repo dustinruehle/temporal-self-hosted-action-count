@@ -147,7 +147,7 @@ These facts were verified against Temporal docs and the tools' READMEs. Do not r
 
 - Metric is `action` with label `service_name="frontend"`. It is a counter, so use `increase()` over a range for totals and `rate()` for APS.
 - Namespace label may be `exported_namespace` or `namespace` depending on the exporter.
-- Version thresholds: 1.17+ emits the metric; 1.22.3+ is billing-accurate including Local Activity metering; 1.17 to 1.22.2 is load-sizing only; earlier than 1.17 has no metric.
+- Version thresholds: 1.17+ emits the metric; 1.22.3+ closely reflects Cloud Action pricing (a billing-grade estimate, not the invoice) including Local Activity metering; 1.17 to 1.22.2 is load-sizing only; earlier than 1.17 has no metric.
 - APS to monthly: `Mean APS × 2,592,000` (that is `60 × 60 × 24 × 30`), a 30-day convention matching Temporal's own examples.
 - Export command is `temporal workflow show --output json`. The counter also accepts the Web UI Download output.
 - Counter tool is **not on PyPI**; run it from git: `uvx --from git+https://github.com/temporal-community/temporal-history-action-count temporal-billable history.json`. (Do not use `uv add temporal-history-action-count` — it does not resolve.) It handles Child Workflows at 2x and collapses back-to-back Local Activities to one.

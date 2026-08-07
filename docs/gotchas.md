@@ -2,7 +2,7 @@
 
 Three edge cases that can skew an Action estimate — each minor, each with a clear fix.
 All three surfaced while validating both paths against a known workload in
-[`../harness`](../harness) (where the true answer was 400).
+[`../harness`](../harness) (where the self-hosted `action` metric read 400).
 
 <a name="a1"></a>
 ## A1 · `increase([30d])` under-reports on "young" series
@@ -43,18 +43,33 @@ uvx --from git+https://github.com/temporal-community/temporal-history-action-cou
 <a name="b2"></a>
 ## B2 · Path B double-counts child-workflow starts
 
-Path B says "sample each distinct Workflow Type." But a child type counted in full
-includes its own `WorkflowExecutionStarted` (+1), while the **parent** history already
-bills that child at **2×** via `ChildWorkflowExecutionStarted`. The billing-accurate
-server metric bills a child as exactly **2 (parent 2×) + its activities** and emits no
-separate start Action for it.
+A child Workflow costs **2 Actions total** — Temporal's
+[metering blog](https://temporal.io/blog/upcoming-changes-to-temporal-cloud-metering)
+puts it plainly: "the parent workflow spawning a child workflow [is] 1 action and the
+execution of the child workflow [is] 1 action." Both are accounted **on the parent
+side**, at the `StartChildWorkflowExecution` command — the child's *own*
+`WorkflowExecutionStarted` event is **not** a separate Action.
 
-**Effect:** naively summing full per-type counts over-charges **+1 Action per child
-execution**.
+The self-hosted `action` metric confirms this exactly. In the harness (25 children):
+
+```
+grpc_StartWorkflowExecution                75   # 50 transfers + 25 PARENTS — children absent
+command_StartChildWorkflowExecution        25   # the child, counted...
+command_StartChildWorkflowExecution_Extra  25   # ...at 2x, on the parent side
+```
+
+There is **no** `grpc_StartWorkflowExecution` for the 25 children.
+
+**The trap:** Path B says "sample each distinct Workflow Type." The counter tool scores a
+child's own history `WorkflowExecutionStarted` as 1 Action (it can't tell it's a child).
+So summing a full parent history (child already at 2×) **and** a full child history
+(its start again) charges the child start twice — **+1 Action per child** over what the
+metric bills. (The tool's README has no warning about this.)
 
 **Fix:** for a Workflow Type that only ever runs as a child, count its activities,
-timers, etc. but **exclude its `WorkflowExecutionStarted`**.
+timers, etc. but **exclude its `WorkflowExecutionStarted`** — the parent's 2× already
+covers it.
 
-> In the harness this over-count (+25) happened to cancel the omitted Queries (−25), so
-> the naive total still read 400 — by coincidence. On a real workload the two won't
-> cancel, so both corrections matter.
+> In the harness this +25 over-count coincidentally cancels the 25 omitted Queries
+> (Queries are billable but never in history), so the naive Path B total still reads 400.
+> On a real workload the two won't cancel, so **do both**: drop child starts, add Queries.
