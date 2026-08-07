@@ -36,18 +36,26 @@ Multiply each type's count by its monthly volume, sum, then add Queries and Hear
 
 ## Turn it into a monthly figure
 
+Path B already lands on a monthly number (per-run counts × monthly volume), and Path A's
+`increase(...[30d])` total already **is** one. You only need the formula below if you
+measured Actions per second instead (the `rate()` query in Path A):
+
 ```
 Monthly Actions = mean APS × 2,592,000     (60 × 60 × 24 × 30)
 ```
 
-Share that total and your peak APS with your Temporal SA — it's the starting point for a
-sizing conversation, not the final number.
+Your **peak APS** comes from that same `rate()` query — the highest point over your
+window (read it off the Grafana graph, or use `max_over_time` in PromQL; see
+[Path A](docs/path-a-metrics.md)). It's what sizes your Namespace APS limits. The monthly
+total plus peak APS are the starting point for a sizing conversation with your Temporal
+SA, not the final number.
 
-## Before you trust the number
+## A few things to watch
 
-Three things bite people: `increase()` under-reporting on young clusters, a wrong install
-command, and a child-workflow double-count. **[Read the gotchas](docs/gotchas.md)** before
-you quote a figure.
+Both methods have a couple of edge cases that can skew the count — an `increase()` window
+that predates your metrics, the counter's git-only install, and how child Workflows are
+counted. Each is minor and has a clear fix; the [gotchas](docs/gotchas.md) walk through
+them.
 
 ## Validate it yourself  *(optional)*
 

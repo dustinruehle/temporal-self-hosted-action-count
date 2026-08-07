@@ -42,11 +42,22 @@ only the end does. Leaving it at `now` while you meant last month gives the wron
 
 ## 4. Capture the shape of the load
 
-Peak APS informs your Namespace APS limits and tells you where elastic scaling pays off.
+Actions per second (APS) per Namespace — the `rate()` of the counter:
 
 ```promql
 sum(rate(action{service_name="frontend"}[1m])) by (exported_namespace)
 ```
+
+**Mean APS** is the average of that series over your window; feed it into the monthly
+formula below. **Peak APS** is its highest point — in Grafana, read the top of the graph;
+in PromQL, wrap it in `max_over_time`:
+
+```promql
+max_over_time( sum(rate(action{service_name="frontend"}[1m]))[30d:1m] )
+```
+
+Peak APS is what sizes your Namespace APS limits, and it's where elastic scaling pays off
+versus overprovisioning self-hosted for the spike.
 
 ## 5. Convert to a monthly figure
 
