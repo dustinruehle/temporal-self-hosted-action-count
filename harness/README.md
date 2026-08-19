@@ -30,13 +30,13 @@ flowchart TB
     GRAF --> PROM
     DDA -->|scrape| T
     WORK -->|poll task queue| T
-    START -->|start workflows + query| T
+    START -->|start workflows and query| T
   end
   DDA -->|forward io.temporal.server.action.count| DDCLOUD["Datadog (your account)"]
 
   PROM -.->|Path A · PromQL| V["verify.sh<br/>reconciles"]
   DDCLOUD -.->|Path A · .as_count| V
-  T -.->|Path B · export histories + counter| V
+  T -.->|Path B · export and count histories| V
 ```
 
 ## What `make demo` does
@@ -49,17 +49,17 @@ sequenceDiagram
     participant Wk as Worker
     participant St as Starter
     participant Vf as verify.sh
-    Mk->>Cl: up — start containers, wait until healthy
-    Mk->>Wk: start worker (polls action-count-tq)
-    Mk->>St: load — 50 transfers + 25 orders, paced ~60s
-    St->>Cl: start workflows; each order spawns a child + issues 1 query
+    Mk->>Cl: up - start containers, wait until healthy
+    Mk->>Wk: start worker, polls action-count-tq
+    Mk->>St: load - 50 transfers and 25 orders, paced ~60s
+    St->>Cl: start workflows, each order spawns a child and one query
     Wk->>Cl: execute activities, local activity, timer, child workflow
     Note over Cl: frontend action counter climbs to 400
     Mk->>Vf: verify
-    Vf->>Cl: Path A — PromQL sum(action{namespace=default})
-    Vf->>Cl: Path A — Datadog .as_count() (when keys are set)
-    Vf->>Cl: Path B — export 3 histories, count, scale by volume
-    Vf-->>Mk: MATCH ✅  400 == 400 == 400
+    Vf->>Cl: Path A - PromQL sum of action in namespace default
+    Vf->>Cl: Path A - Datadog as_count, when keys are set
+    Vf->>Cl: Path B - export 3 histories, count, scale by volume
+    Vf-->>Mk: MATCH - all three read 400
 ```
 
 ## One command
