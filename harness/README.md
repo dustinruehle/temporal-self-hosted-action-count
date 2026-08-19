@@ -42,7 +42,7 @@ Docker · Go · [`uv`](https://docs.astral.sh/uv/) · the `temporal` CLI.
 
 | Path | What |
 |---|---|
-| `cluster/` | docker-compose: Temporal **1.29.1** + Postgres + Web UI + Prometheus + Grafana, with the `action` metric exposed on `:8000` |
+| `cluster/` | docker-compose: Temporal **1.29.1** + Postgres + Web UI + Prometheus + Grafana, with the `action` metric exposed on `:8000` (+ an optional Datadog agent, see below) |
 | `moneytransfer/` | `MoneyTransfer` saga (withdraw → deposit) — 3 Actions/run |
 | `orderfulfillment/` | `OrderFulfillment` parent (validate → **child** → **local activity** → **timer** → confirm) — 7 Actions/run, spawns a 3-Action `ReserveInventory` child |
 | `worker/`, `starter/` | register the workflows; fire *N* of each and issue one Query per order |
@@ -68,6 +68,35 @@ every tricky case the recipe claims to handle: **child (2×)**, **local activity
 | `demo` | `up` → `load` → `verify` |
 | `down` | stop and remove the cluster (and volumes) |
 | `clean` | `down` + remove build artifacts and generated files |
+
+## Datadog lane (optional)
+
+By default the harness proves **Path A via Prometheus**. If you have a Datadog account it
+can also reconcile **Path A via Datadog** — the real query, not a printout — because both
+read the *same* frontend `action` counter. Export your keys and run as normal:
+
+```bash
+export DD_API_KEY=<api-key>      # starts the agent; ships the counter to Datadog
+export DD_APP_KEY=<app-key>      # lets verify query Datadog back
+export DD_SITE=datadoghq.com     # or datadoghq.eu, us5.datadoghq.com, …
+make demo
+```
+
+With `DD_API_KEY` set, `make up` also starts a Datadog agent that OpenMetrics-scrapes the
+existing `:8000` endpoint and forwards `action` as `io.temporal.server.action.count`
+(tagged `server-name:harness`). `make verify` then queries Datadog's API over the run
+window and reconciles `.as_count()` against the same known total:
+
+```
+Path A via Datadog  (.as_count()) = 400   [sum:io.temporal.server.action.count{server-name:harness}.as_count()]
+MATCH ✅  Datadog 400 vs Path B 400
+```
+
+Without keys, nothing changes — `verify` just prints the equivalent Datadog query next to
+the Prometheus one so the Datadog form is always visible. Ingest lag means the Datadog read
+can take up to ~90s; `verify` polls until the metric lands. Overrides: `DD_SERVER_NAME`
+(tag value, default `harness`) and `DD_METRIC` (default `io.temporal.server.action.count`,
+in case your agent normalizes the counter suffix differently).
 
 ## Endpoints (while up)
 Web UI http://localhost:8080 · Prometheus http://localhost:9090 · Grafana http://localhost:8085 · metrics http://localhost:8000/metrics

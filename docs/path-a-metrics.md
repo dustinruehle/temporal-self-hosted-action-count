@@ -1,8 +1,9 @@
-# Path A — Read the Action metric from Prometheus
+# Path A — Read the Action metric from Prometheus or Datadog
 
-**Preferred.** If your cluster is already scraped by Prometheus/Grafana, the Action
-count is one query away. The Temporal Server emits an `action` counter on the frontend
-that maps directly to Cloud billable Actions.
+**Preferred.** If your cluster is already scraped by Prometheus/Grafana **or Datadog**, the
+Action count is one query away. The Temporal Server emits an `action` counter on the
+frontend that maps directly to Cloud billable Actions — Prometheus exposes it as `action`,
+Datadog as `io.temporal.server.action.count`. Every query below is given in both dialects.
 
 ## 1. Confirm your Server version
 
@@ -17,20 +18,35 @@ The metric is a **billing-grade estimate**, not the invoice — Temporal's docs 
 
 ## 2. Total Actions over your window
 
+**Prometheus / Grafana**
 ```promql
 sum(increase(action{service_name="frontend"}[30d]))
 ```
 
-`action` is a counter, so `increase()` gives the delta across the window. For a single
-Namespace, add the label:
+**Datadog**
+```
+sum:io.temporal.server.action.count{$server-name}.as_count()
+```
 
+`action` is a counter. In PromQL `increase()` gives the delta across the window; in Datadog
+`.as_count()` sums the counter over the dashboard time range, so set that range to your
+window rather than putting it in the query. For a single Namespace, add the label:
+
+**Prometheus / Grafana**
 ```promql
 sum(increase(action{service_name="frontend", exported_namespace="default"}[30d]))
 ```
 
+**Datadog**
+```
+sum:io.temporal.server.action.count{$server-name} by {namespace}.as_count()
+```
+
 > **Namespace label:** when Prometheus scrapes the Server **directly**, the label is
-> `namespace`. `exported_namespace` shows up when metrics arrive via the OTel collector
-> / remote-write. If one returns nothing, try the other.
+> `namespace`; `exported_namespace` shows up when metrics arrive via the OTel collector
+> / remote-write. If one returns nothing, try the other. In Datadog the tag is `namespace`.
+> `$server-name` is a template variable for your cluster tag (e.g. `kube_cluster_name:prod`)
+> so the widgets aren't hard-coded to one cluster.
 
 ## 3. Set the window end correctly
 
@@ -45,15 +61,23 @@ only the end does. Leaving it at `now` while you meant last month gives the wron
 
 ## 4. Capture the shape of the load
 
-Actions per second (APS) per Namespace — the `rate()` of the counter:
+Actions per second (APS) per Namespace — the rate of the counter:
 
+**Prometheus / Grafana**
 ```promql
 sum(rate(action{service_name="frontend"}[1m])) by (exported_namespace)
 ```
 
+**Datadog**
+```
+sum:io.temporal.server.action.count{$server-name} by {namespace}.as_rate()
+```
+
 **Mean APS** is the average of that series over your window; feed it into the monthly
-formula below. **Peak APS** is its highest point — in Grafana, just read the top of the
-graph over your range. In PromQL, wrap the rate in `max_over_time` as a subquery:
+formula below. In Datadog, put the `.as_rate()` query in a query-value widget with the
+**avg** aggregator. **Peak APS** is its highest point — in Grafana or Datadog, just read
+the top of the graph over your range. To compute it, wrap the rate in `max_over_time`
+(PromQL) or switch the widget aggregator to **max** (Datadog):
 
 ```promql
 max_over_time( sum(rate(action{service_name="frontend"}[1m]))[24h:1m] )

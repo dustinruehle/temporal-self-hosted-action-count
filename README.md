@@ -8,13 +8,22 @@ Cloud does, but the data is there. There are two ways to get it — **start with
 you scrape metrics, otherwise Path B.** Each path below is the quick version; follow the
 link for full steps and caveats.
 
-## Path A — read the metric  ·  *preferred, if you scrape Prometheus / Grafana*
+## Path A — read the metric  ·  *preferred, if you scrape Prometheus / Grafana or Datadog*
 
-Your Action count for the last 30 days is one query:
+Your Action count for the last 30 days is one query — pick your metrics backend:
 
+**Prometheus / Grafana**
 ```promql
 sum(increase(action{service_name="frontend"}[30d]))
 ```
+
+**Datadog**
+```
+sum:io.temporal.server.action.count{$server-name}.as_count()
+```
+> Set the dashboard time range to your 30-day window (Datadog scopes `.as_count()` to the
+> view). `$server-name` is a template variable for your cluster tag, e.g.
+> `kube_cluster_name:prod`.
 
 On Server **1.22.3+** this closely reflects Cloud Action pricing (incl. Local Activity
 metering); it's a billing-grade **estimate**, not the invoice. (No `action` metric before
@@ -39,18 +48,18 @@ Multiply each type's count by its monthly volume, sum, then add Queries and Hear
 ## Turn it into a monthly figure
 
 Path B already lands on a monthly number (per-run counts × monthly volume), and Path A's
-`increase(...[30d])` total already **is** one. You only need the formula below if you
-measured Actions per second instead (the `rate()` query in Path A):
+total already **is** one. You only need the formula below if you measured Actions per
+second instead (the APS query in Path A — `rate()` in PromQL, `.as_rate()` in Datadog):
 
 ```
 Monthly Actions = mean APS × 2,592,000     (60 × 60 × 24 × 30)
 ```
 
-Your **peak APS** comes from that same `rate()` query — the highest point over your
-window (read it off the Grafana graph, or use `max_over_time` in PromQL; see
-[Path A](docs/path-a-metrics.md)). It's what sizes your Namespace APS limits. The monthly
-total plus peak APS are the starting point for a sizing conversation with your Temporal
-SA, not the final number.
+Your **peak APS** comes from that same APS query — the highest point over your window.
+Read it off the graph, or compute it: `max_over_time(...)` in PromQL, the `max` aggregator
+on `.as_rate()` in Datadog (see [Path A](docs/path-a-metrics.md)). It's what sizes your
+Namespace APS limits. The monthly total plus peak APS are the starting point for a sizing
+conversation with your Temporal SA, not the final number.
 
 ## A few things to watch
 
@@ -81,4 +90,4 @@ cd harness && make demo
 - [Estimate Actions for migration](https://docs.temporal.io/cloud/migrate/estimate-actions) · [What counts as an Action](https://docs.temporal.io/cloud/actions)
 - [temporal-history-action-count](https://github.com/temporal-community/temporal-history-action-count) — the Path B counter
 - [temporal-server-actions-count](https://github.com/temporal-sa/temporal-server-actions-count) — scripts the Path A metric sampling
-- [datadog-self-hosted-queries](https://github.com/temporal-sa/datadog-self-hosted-queries) — ready-made queries if you use Datadog
+- [datadog-self-hosted-queries](https://github.com/temporal-sa/datadog-self-hosted-queries) — importable Datadog widgets for the Path A queries above

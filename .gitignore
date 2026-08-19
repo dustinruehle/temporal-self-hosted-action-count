@@ -12,5 +12,13 @@ harness/counter/
 .venv/
 __pycache__/
 
+# local secrets (Datadog keys etc.) — .env.example is tracked, .env is not
+.env
+harness/.env
+
+# editors
+.idea/
+.vscode/
+
 # os
 .DS_Store

@@ -1,0 +1,15 @@
+# Datadog Agent OpenMetrics check — scrapes the SAME frontend metrics endpoint
+# (:8000/metrics) that Prometheus scrapes, and forwards the `action` counter to
+# Datadog. With namespace `io.temporal.server`, the counter lands as
+#   io.temporal.server.action.count
+# (Datadog appends `.count` to counter-type metrics) — the exact metric the
+# datadog-self-hosted-queries widgets use. The server-name tag is what the widget
+# `$server-name` template variable scopes to.
+instances:
+  - openmetrics_endpoint: http://temporal:8000/metrics
+    namespace: io.temporal.server
+    metrics:
+      - action
+    tags:
+      - server-name:harness
+    min_collection_interval: 15
