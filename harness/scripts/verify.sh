@@ -79,7 +79,11 @@ fi
 DD_METRIC=${DD_METRIC:-io.temporal.server.action.count}
 DD_SERVER_NAME=${DD_SERVER_NAME:-harness}
 DD_SITE=${DD_SITE:-datadoghq.com}
-DD_QUERY="sum:${DD_METRIC}{server-name:${DD_SERVER_NAME}}.as_count()"
+# Scope to the workload namespace, exactly like the Prometheus query above
+# (namespace="default"). Without this the sum also picks up the temporal-system
+# namespace's internal actions, which would over-count on any run where they fire.
+DD_NAMESPACE=${DD_NAMESPACE:-default}
+DD_QUERY="sum:${DD_METRIC}{server-name:${DD_SERVER_NAME},namespace:${DD_NAMESPACE}}.as_count()"
 DD_COUNT="annotate"   # sentinel: no keys -> annotate only
 
 if [ -n "${DD_API_KEY:-}" ] && [ -n "${DD_APP_KEY:-}" ] && [ -f .run-window ]; then

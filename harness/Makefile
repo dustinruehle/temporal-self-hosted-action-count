@@ -17,7 +17,7 @@ COMPOSE = docker compose -f cluster/docker-compose.yml
 # the agent container starts alongside the cluster and verify.sh reconciles the real
 # Datadog query. Unset, everything runs offline exactly as before.
 DD_PROFILE := $(if $(DD_API_KEY),--profile datadog,)
-export DD_API_KEY DD_APP_KEY DD_SITE DD_SERVER_NAME DD_METRIC
+export DD_API_KEY DD_APP_KEY DD_SITE DD_SERVER_NAME DD_METRIC DD_NAMESPACE
 
 demo: up load verify ## full run: cluster -> workload -> reconciliation
 

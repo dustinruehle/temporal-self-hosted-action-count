@@ -4,6 +4,64 @@ Spins up a throwaway self-hosted Temporal cluster, runs a **known** workload, an
 **Path A (metric) and Path B (histories) landing on the same Action count**. Use it to
 convince yourself the method is sound before quoting a figure.
 
+## What it stands up
+
+Everything runs locally under `docker compose` and is thrown away with `make down` — a
+real self-hosted Temporal Server (not a mock), scraped by Prometheus and, optionally,
+Datadog. `verify.sh` then reads the **same** Action count three independent ways and
+checks they agree.
+
+```mermaid
+flowchart TB
+  subgraph host["Your machine · docker compose · all disposable"]
+    subgraph cluster["Self-hosted Temporal cluster"]
+      T["<b>Temporal Server 1.29.1</b> (auto-setup)<br/>frontend + history + matching + worker<br/>emits the <b>action</b> counter on :8000/metrics"]
+      PG[("Postgres 16<br/>persistence")]
+      UI["Web UI :8080"]
+      T --- PG
+      UI --- T
+    end
+    PROM["Prometheus :9090<br/>scrapes :8000 every 5s"]
+    GRAF["Grafana :8085"]
+    DDA["Datadog agent<br/><i>optional · --profile datadog</i><br/>OpenMetrics scrape of :8000"]
+    WORK["Go worker<br/>runs the workflows + activities"]
+    START["Go starter<br/>fires N workflows + 1 query/order"]
+    PROM -->|scrape| T
+    GRAF --> PROM
+    DDA -->|scrape| T
+    WORK -->|poll task queue| T
+    START -->|start workflows + query| T
+  end
+  DDA -->|forward io.temporal.server.action.count| DDCLOUD["Datadog (your account)"]
+
+  PROM -.->|Path A · PromQL| V["verify.sh<br/>reconciles"]
+  DDCLOUD -.->|Path A · .as_count| V
+  T -.->|Path B · export histories + counter| V
+```
+
+## What `make demo` does
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Mk as make demo
+    participant Cl as Temporal cluster
+    participant Wk as Worker
+    participant St as Starter
+    participant Vf as verify.sh
+    Mk->>Cl: up — start containers, wait until healthy
+    Mk->>Wk: start worker (polls action-count-tq)
+    Mk->>St: load — 50 transfers + 25 orders, paced ~60s
+    St->>Cl: start workflows; each order spawns a child + issues 1 query
+    Wk->>Cl: execute activities, local activity, timer, child workflow
+    Note over Cl: frontend action counter climbs to 400
+    Mk->>Vf: verify
+    Vf->>Cl: Path A — PromQL sum(action{namespace=default})
+    Vf->>Cl: Path A — Datadog .as_count() (when keys are set)
+    Vf->>Cl: Path B — export 3 histories, count, scale by volume
+    Vf-->>Mk: MATCH ✅  400 == 400 == 400
+```
+
 ## One command
 
 ```bash

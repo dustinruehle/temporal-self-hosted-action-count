@@ -68,14 +68,25 @@ that predates your metrics, the counter's git-only install, and how child Workfl
 counted. Each is minor and has a clear fix; the [gotchas](docs/gotchas.md) walk through
 them.
 
-## Validate it yourself  *(optional)*
+## Don't trust it — prove it  ·  [`harness/`](harness/)
 
-Want proof before trusting the method? [`harness/`](harness/) stands up a disposable
-cluster, runs a **known** workload, and shows both paths landing on the same number:
+This repo ships a **runnable validation harness** so you don't have to take the numbers on
+faith. One command stands up a real (disposable) self-hosted Temporal cluster + Postgres +
+Prometheus (+ optional Datadog), runs a **hand-countable** workload, and shows the Action
+count reconciling **three independent ways** — the Prometheus metric, the Datadog metric,
+and the exported histories — all landing on the same number:
 
 ```bash
 cd harness && make demo
 ```
+```
+MATCH ✅  Path A 400 vs Path B 400
+MATCH ✅  Datadog 400 vs Path B 400
+```
+
+It deliberately exercises every tricky case (child Workflows, local Activities, Timers,
+Queries) so the reconciliation is meaningful. See the **[harness README](harness/)** for
+architecture + sequence diagrams and the full walkthrough.
 
 ## What's in this repo
 
