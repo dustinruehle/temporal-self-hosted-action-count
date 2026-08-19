@@ -33,15 +33,19 @@ uv run temporal-billable ../history.json
 
 It prints the billable Actions in that run (e.g. `Total ... found: 7`). Child Workflows
 and Local Activities are handled for you — billed at **2×** and collapsed to **1**
-respectively.
+respectively. (Per [Cloud Actions](https://docs.temporal.io/cloud/actions): a child
+Workflow is "two Actions," and "all Local Activities associated with one Workflow Task
+count as a single Action.")
 
 ## 3. Scale by volume, then add what history hides
 
 Multiply each type's per-run count by monthly volume, then sum across types. **Then add
 the Actions that never land in Event History:**
 
-- ~**1 Action per Query**
-- **Activity Heartbeats** that reach the server
+- ~**1 Action per Query** — [Cloud Actions](https://docs.temporal.io/cloud/actions):
+  "An Action occurs for every Query"
+- **Activity Heartbeats** that reach the server — same page: a Heartbeat "counts as an
+  Action only if it reaches the Temporal Server"
 
 If you Query or Heartbeat heavily, leaving these out understates the total.
 

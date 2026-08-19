@@ -2,8 +2,9 @@
 
 **Preferred.** If your cluster is already scraped by Prometheus/Grafana **or Datadog**, the
 Action count is one query away. The Temporal Server emits an `action` counter on the
-frontend that maps directly to Cloud billable Actions — Prometheus exposes it as `action`,
-Datadog as `io.temporal.server.action.count`. Every query below is given in both dialects.
+frontend that maps directly to [Cloud billable Actions](https://docs.temporal.io/cloud/actions)
+— Prometheus exposes it as `action`, Datadog as `io.temporal.server.action.count`. Every
+query below is given in both dialects.
 
 ## 1. Confirm your Server version
 
@@ -13,8 +14,11 @@ Datadog as `io.temporal.server.action.count`. Every query below is given in both
 | 1.17 – 1.22.2 | Useful for load sizing; runs low on Local Activities |
 | < 1.17 | No `action` metric — use [Path B](path-b-histories.md) |
 
-The metric is a **billing-grade estimate**, not the invoice — Temporal's docs say 1.22.3+
-"more closely reflects" Cloud pricing. Use it to size and forecast, then confirm with your SA.
+The metric is a **billing-grade estimate**, not the invoice — Temporal's
+[migration docs](https://docs.temporal.io/cloud/migrate/estimate-actions) say versions
+"1.22.3 and later provide an `action` metric that more closely reflects current Temporal
+Cloud Action pricing, including Local Activity metering." Use it to size and forecast,
+then confirm with your SA.
 
 ## 2. Total Actions over your window
 
